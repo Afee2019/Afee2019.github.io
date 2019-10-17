@@ -1,7 +1,7 @@
 {
-  "name": "BY Blog",
-  "short_name": "BY Blog",
-  "description": "A personal blog by engineer",
+  "name": "ShawnLee-Blog",
+  "short_name": "Shawn Lee's Blog",
+  "description": "李绍俊的技术博客",
   "icons": [{
     "src": "icons/pwa_icon_128.png",
     "sizes": "128x128",
