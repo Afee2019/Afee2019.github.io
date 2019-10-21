@@ -1,3 +1,16 @@
+---
+layout:     post
+title:      Docker_exec和attach的区别
+subtitle:   Docker_exec和attach的区别
+date:       2019-10-21
+author:     李绍俊
+header-img: img/post-bg-ios9-web.jpg
+catalog: true
+tags:
+    - Docker
+    - 容器化
+---
+
 # Docker exec和Docker attach的区别
 
 1. attach 直接进入容器 启动命令 的终端，不会启动新的进程。
@@ -6,7 +19,7 @@
 
 
 
-不论是开发者是[运维](https://www.baidu.com/s?wd=运维&tn=SE_PcZhidaonwhc_ngpagmjz&rsv_dl=gh_pc_zhidao)人员，都经常有需要进入容器的诉求。
+不论是开发者是运维人员，都经常有需要进入容器的诉求。
 目前看，主要的方法不外乎以下几种：
 
 1. 使用ssh登陆进容器
