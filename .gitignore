@@ -33,3 +33,10 @@ Temporary Items
 
 # debug file
 _site
+
+# IDEA config file
+.idea
+
+# jekyll cache file
+.jekyll-cache
+
