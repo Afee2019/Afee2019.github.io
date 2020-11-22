@@ -1,0 +1,241 @@
+I"�L<h1 id="多云架构落地设计和实施方案">多云架构落地设计和实施方案</h1>
+
+<ul>
+  <li>Liu Bao</li>
+</ul>
+
+<p>本文转载自Infoq.cn</p>
+
+<h2 id="总体思路">总体思路</h2>
+
+<p>不同云厂商提供的云服务不尽相同，相同的云服务在功能、性能上也会有或多或少的差异。越是深度使用某个云厂商的云服务，越是难于迁移到其他云厂商。选择自己构建云服务，则技术门槛，维护成本很高。确定多云架构以后，首先需要在技术栈的选型上做好折中。一个基本的原则是通过业务架构的灵活性，去适配不同的云厂商，尽可能的使用云厂商提供的优秀特性，提升运行于该云平台的业务系统的可靠性，提升整体业务的竞争力。</p>
+
+<p>上面的思路和一些客户常见的思路有显著差别。有些客户选择采用开源软件，搭建自己的 PaaS 平台；有些客户则完全采用云厂商的技术栈，开发两套业务系统。这两种方式是两个极端，前者开发和运维难度高，往往由于技术风险评估不足，项目无法如期交付，或者产品竞争力太弱，没有云厂商提供的服务好。后者则需要维护两套系统，代码重复度高，还会被云厂商完全绑定，失去谈判的筹码，业务发展灵活性降低。还有些客户期望云厂商提供足够兼容性的框架支持，在不改造现有业务系统的逻辑的情况下实现多云部署，云厂商这方面的努力通常由于客户系统的复杂性和多样性得不到落地。</p>
+
+<h2 id="开发框架选择和架构设计">开发框架选择和架构设计</h2>
+
+<p>开发框架设计是多云架构的核心，也是抽象程度最高的部分。华为云主推 ServiceComb 作为微服务框架，阿里云主推 HSF、Dubbo 作为微服务框架，其他国外的云厂商，多数选择 Spring Cloud 作为微服务框架，另外还有其他不同的语言和框架选择。虽然 mesher 等技术为多语言协同工作提供了良好的支持，但是为了最大限度的利用框架特性，帮助快速构建稳定可靠的业务系统，选择一个微服务开发框架仍然是必不可少的。</p>
+
+<p>基于总体思路，多云架构期望在华为云上使用 ServiceComb 运行时，在阿里云上使用 HSF 运行时，并且支持 Spring Cloud 运行时。完成这个目标，首先需要对微服务运行框架的运行时和主要组成部分有所了解。对于多数中台系统，对于框架运行时的依赖，一般都是 RPC 框架，以及基于 RPC 框架做的服务治理能力，包括服务注册发现、熔断容错、限流等机制。将业务逻辑核心代码，与微服务框架能力进行解耦，是设计的第一步。</p>
+
+<p><img src="20191017%20%E5%A4%9A%E4%BA%91%E6%9E%B6%E6%9E%84%E8%90%BD%E5%9C%B0%E8%AE%BE%E8%AE%A1%E5%92%8C%E5%AE%9E%E6%96%BD%E6%96%B9%E6%A1%88.assets/6b086578bbef62b95d52351a0bf6c708.png" alt="多云架构落地设计和实施方案" /></p>
+
+<p>上面的图形展现了基本的逻辑架构。</p>
+
+<p>业务核心：技术选型上使用 Spring、Spring Boot。ServiceComb、HSF 和 Spring Cloud 等微服务框架的技术底座，都可以基于 Spring、 Spring Boot 技术栈来构建。</p>
+
+<p>在逻辑架构下，需要将微服务代码进行分层，包含下面三个主要目录：</p>
+
+<ul>
+  <li><strong>microservice-api</strong>：定义微服务的接口。该目录包含接口定义（interface）、数据结构定义（models）。为了支持不同的微服务框架，对于接口定义和数据结构定义会有一定的要求。</li>
+  <li><strong>microservice-service</strong>：业务逻辑实现代码。</li>
+  <li><strong>microservice-endpoint-servicecomb</strong>：发布为 ServiceComb 的微服务项目。</li>
+  <li><strong>microservice-endpoint-hsf</strong>：发布为 HSF 的微服务项目。</li>
+  <li><strong>microservice-endpoint-springcloud</strong>：发布为 Spring Cloud 的微服务项目。</li>
+</ul>
+
+<p>这个代码分层实施的核心关键是 api 设计，以及业务逻辑实现和服务发布解耦。api 设计需要满足不同的微服务框架的设计要求。这里涉及到 RPC 编解码的基础。RPC 编解码通常分为语言无关（跨平台）和语言相关（不跨平台）。比如 HSF、Dubbo 的缺省编解码是语言有关的，只能够支持 JAVA 程序之间的通信，ServiceComb 缺省采用 Jackson 编解码，或者 protobuffer 编解码，这两种方式都基于 Open API 2.0 进行定义，可以做到语言无关，Spring Cloud 则相对复杂一些，它是一种混合型的编码格式，可以通过灵活的序列化定制，满足多样性需要，也可以严格遵循 Jackson 和 Open API 标准。通常语言无关的编解码可以完全包含语言无关的编解码要求，因此 api 定义的时候，需要做到语言无关，才能够保证 api 能够在不同的微服务开发框架下得到最好的实现。基于本文是描述工程实践，不详细探讨关于跨平台设计的原理，下面列出一些接口设计的准则：</p>
+
+<ul>
+  <li>使用简单的类型（比如 Integer, String, Boolean 等）定义参数或者返回值。或者使用包含简单类型的，符合 Java Bean 规范的 POJO Bean 定义参数或者返回值。</li>
+  <li>尽可能不使用 interface, abstract class, 存在多个实现的基类，模板类作为参数或者返回值。</li>
+  <li>不使用运行环境强相关的对象作为接口参数或者返回值。比如 HttpServletRequest，RpcContext，InvocationContext，ResonseEntity 等。</li>
+</ul>
+
+<p>上面的原则从使用者的视角来看，是非常容易理解的。接口语义清晰，没有歧义，直接通过接口定义就能够理解接口的参数个数以及如何传递，不需要提供额外的文档或者查看源代码。有利于通过接口定义生成文档、swagger 定义。</p>
+
+<p>在实际项目中，开发者需要理解 microservice-api 是微服务之间的接口定义，接口设计需要考虑数据的序列化和反序列化。这个不同于内部接口设计。为了降低业务实现逻辑的重复度，增强内聚性，内部接口设计会更多的使用抽象、继承进行逻辑封装。内部接口的数据结构，还会包含一些额外的控制逻辑。比如数据库访问层的数据结构，提供懒加载等机制，当访问到 getter 方法的时候，实际上调用的是代理对象的 getter 方法。因此，需要有一些数据结构转换逻辑，将内部的数据结构转换为外部接口的数据结构，以保持服务之间接口和内部接口的界限清晰，防止将内部数据结构作为参数或者返回值，导致内部信息泄露，造成不可预期的处理结果。</p>
+
+<h3 id="api-示例">api 示例</h3>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>interface LoginService {
+  SessionInfo   login(String username, String password);
+}
+ 
+ 
+public class SessionInfo {
+  private String   sessionId;
+  private String   username;
+}
+</code></pre></div></div>
+
+<h3 id="service-示例">service 示例</h3>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Service
+ 
+@Primary
+ 
+public class LoginServiceImpl implements LoginService {
+ 
+  public SessionInfo   login(String username, String password) {
+ 
+         // do login
+ 
+  }
+ 
+}
+</code></pre></div></div>
+
+<h3 id="servicecomb-endpoint-示例">ServiceComb Endpoint 示例</h3>
+
+<p>服务端：</p>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@RpcSchema(schemaId = “LoginServiceEndpoint”)
+public class LoginServiceEndpoint implements LoginService   {
+  @Autowired
+  private   LoginService service;
+ 
+ 
+  public SessionInfo   login(String username, String password) {
+         return   service.login(username, password);
+  }
+ 
+ 
+}
+</code></pre></div></div>
+
+<p>客户端：</p>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Bean
+public LoginService getLoginService() {
+  return   Invoker.createProxy(SERVICE_NAME, "LoginServiceEndpoint", LoginService.class);
+}
+</code></pre></div></div>
+
+<p>或者</p>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@RpcReference(microserviceName=SERVICE_NAME, schemaId=”LoginServiceEndpoint”)
+private LoginService loginService;
+</code></pre></div></div>
+
+<h3 id="hsf-endpoint-示例">HSF Endpoint 示例</h3>
+
+<p>服务端：</p>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@HSFProvider(serviceInterface = LoginService.class,serviceVersion   = "1.0.0")
+public class LoginServiceEndpoint implements LoginService   {
+  @Autowired
+  private   LoginService service;
+ 
+ 
+  public SessionInfo   login(String username, String password) {
+         return   service.login(username, password);
+  }
+ 
+ 
+}
+</code></pre></div></div>
+
+<p>客户端：</p>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@HSFConsumer
+private LoginService loginService;
+</code></pre></div></div>
+
+<p>从上面的代码示例看，Endpoint 层需要做到尽可能逻辑简单，实现逻辑全部交给 Service 层，只包含接口声明，或者包含必要的数据结构转换逻辑。上面的方式演示了 RPC 的接口声明，还可以加上 REST 标签（Spring MVC，或者 JAX RS），来支持 REST 接口。</p>
+
+<h2 id="遗留系统的改造策略">遗留系统的改造策略</h2>
+
+<p>大部分公司都会存在现有系统运行于某一个云上，把现有系统推倒重来，进行全新设计，通常不是一个好主意。遗留系统的改造需要遵循持续迭代，继承性改造的思路。</p>
+
+<p>以阿里云系统改造为华为云系统为例，将原来基于 HSF 开发的微服务应用改造为基于 ServcieComb 开发的微服务应用。</p>
+
+<p>按照前面的总体思路，首先需要将原来项目强依赖于 HSF 的代码部分分离出来，建立下面的目录结构：</p>
+
+<ul>
+  <li><strong>microservice-api</strong>：定义微服务的接口。该目录包含接口定义（interface）、数据结构定义（models）。为了支持不同的微服务框架，对于接口定义和数据结构定义会有一定的要求。</li>
+  <li><strong>microservice-service</strong>：业务逻辑实现代码。</li>
+  <li><strong>microservice-endpoint-hsf</strong>：发布为 HSF 的微服务项目。</li>
+</ul>
+
+<p>这个过程相对而言是简单的，不涉及任何业务逻辑的调整，只是代码目录结构的变化和 POM 依赖关系的调整。调整完成后，可以对现有功能进行简单自动化验证，保证项目自动化测试用例能够通过。调整后的项目功能和遗留系统是一致的，拥有一个始终无损的运行系统，对于功能比较、问题发现都是非常有帮助的。</p>
+
+<p>项目调整后，就可以增加华为云的项目：</p>
+
+<ul>
+  <li><strong>microservice-endpoint-servicecomb</strong>：发布为 ServiceComb 的微服务项目。</li>
+</ul>
+
+<p>这个项目可以复制 microservice-endpoint-hsf，将 POM 依赖改为 ServiceComb 的内容，并将发布的接口（Endpoint）调整为 ServiceComb 的发布方式。</p>
+
+<p>项目调整后，就可以一份代码构建出两个可执行 jar 包，两个 jar 包分别在华为云和阿里云部署。</p>
+
+<p>这个过程的工作量需要通过原来代码本身的复杂度、api 接口的规范性、代码规模等进行评估。如果原来代码结构复杂，api 定义不规范，工作量会显著增加。对于良好组织的代码，这个过程则会非常容易。实际改造的一些项目，有些一天时间即可完成，有些则花费了一、两个月时间。获取到产品的业务结构、代码规模和通过简单的识别现有代码的技术栈和开发方式，能够帮助有效的评估工作量。</p>
+
+<p>遗留系统改造的核心工作在于 microservice-api 中接口定义的梳理。由于 HSF 不是一个跨语言的开发框架，因此在接口定义里面使用的数据结构 ServiceComb 可能存在不支持的情况。采用一个支持跨语言的框架的接口定义作为基准（一般的，可以将接口定义通过 IDL、WSDL 或者 Open API 描述的接口定义，比如 gRPC、WebService、ServiceComb，），其他框架都实现这个接口，是微服务架构适配的核心关键。</p>
+
+<h2 id="数据库适配">数据库适配</h2>
+
+<p>业务系统都会使用数据库。各个云厂商支持的数据库形式多样，有 MySQL、Postgre、Oracle 等，此外还有分布式数据库，以及分库分表等特性，数据仓库支持等。虽然在连接池管理、事务管理、ORM 框架等方面有大量的开源开发框架，比如 dbcp、spring transaction、MyBatis 等，它们仍然没法覆盖所有的应用场景。适配多云架构对于业务代码开发有如下建议:</p>
+
+<ol>
+  <li>尽可能使用符合 ANSI SQL Standard 的 SQL 语句。比如 MySQL 在大小写、Column 引用、Limit、Group by 语句等方面都有自己的特殊用法。为了更好的适配多云数据库，应该避免使用特殊用法，除非对于业务价值具备明显的价值，而且没有对等的解决方案。</li>
+  <li>选用一个被广泛采用的 ORM 框架。比如 MyBatis、JPA 等。这些框架被广泛支持，对于多数据库支持得到比较充分的验证。在使用数据库有差异的地方，提供了非常良好的扩展机制。比如使用 MyBatis，可以使用 DatabaseProvider 接口，来屏蔽语法差异。在使用 JDBC 或者 JDBCTempate 拼接 URL 的地方，则可以通过接口的不同实现，返回不同的 SQL 语句。</li>
+</ol>
+
+<p>复制代码</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;if   test="_databaseId == 'mysql' "&gt;
+limit   #{stratRow},#{rowCount}
+&lt;/if&gt;
+&lt;if   test="_databaseId == 'postgresql' "&gt;
+limit   #{rowCount} offset #{stratRow}
+&lt;/if&gt;
+</code></pre></div></div>
+
+<ol>
+  <li>分布式数据库、分库分表、分析型数据库对于业务开发存在不同的限制。比如对于唯一索引使用的限制、对于分库分表键的修改限制等。对于这些场景，尽可能符合这些限制，调整业务实现方式，避免为了满足某个不重要的场景需要，陷入一些分布式场景无法解决的问题当中去，而无法适配其他云厂商的数据库。</li>
+</ol>
+
+<h2 id="缓存适配">缓存适配</h2>
+
+<p>各个厂商均支持 Redis 作为缓存，但是在 Redis 发展路径上，有不同的分支。一个分支是 Proxy 集群模式，一个分支是 Redis 的原生集群方式。Redis 提供的客户端 API 也存在两套，一个是 Jedis，一个是 JedisCluster，两套支持的命令集合不尽相同。比如 Proxy 集群模式能够非常好的支持所有的 Jedis 命令，而 Redis 的原生集群方式只支持 JedisCluster 命令。很多客户常用的 pipeline 指令，在 Redis 原生集群方式下不支持。</p>
+
+<p>Proxy 集群能够更好的屏蔽底层服务的差异，在没有特殊需要的情况下，建议用户使用 Proxy 集群模式，云厂商需要通过 Proxy 集群模式提供对于 Jedis 不同指令的支持。用户也可以选择 Redis 的原生集群，这个在不同的云产生也都提供了支持，用户可以在业务场景上避免使用原生集群不支持的命令，这样就可以在多云环境上部署。</p>
+
+<p>总结起来，缓存的多云支持的最佳实践：</p>
+
+<ol>
+  <li>及时升级 Client API 版本，使用比较新的 Client API，并且只使用 JedisCluster 提供的指令集合。</li>
+</ol>
+
+<h2 id="消息中间件适配">消息中间件适配</h2>
+
+<p>相对于数据库和缓存，消息中间件的适配的标准性更弱一点。虽然早期 JAVA 提出了 JMS 等标准，但是目前主流的消息中间件都没有提供 JMS 接口的实现。阿里的 RocketMQ、华为基于 Kafka 的 DMS 的接口均不一致。而且消息中间件的服务质量并不一样，比如在消息有序投递、重复投递等方面是通过消息中间件配置提供的，而不受客户端接口控制。有些客户的业务逻辑依赖于特定消息中间件的机制，因此需要对消息中间件使用的接口、接口行为进行抽象，分析其他云厂商的中间件能否提供对应的接口实现并满足对应的服务质量要求，有时候需要业务代码做一些补偿，以弥补不同中间件服务质量的差异。</p>
+
+<h2 id="其他中间件适配">其他中间件适配</h2>
+
+<p>其他中间件包括日志服务器、定时任务服务、对象存储服务等等。适配的总体思路一致，这里不详细描述里面的细节。</p>
+
+<h2 id="多云架构的挑战和建议">多云架构的挑战和建议</h2>
+
+<p>和做协议标准一样，多云架构除了给客户带来商业上的灵活性，还会促进业务系统软件架构的改善，提升整体的软件质量。因为多云架构需要对使用的技术点进行权衡，技术选型上更多采用相对中立和标准的方案，这些方案被广泛验证，相对于使用一些私有特性来说，更加稳定，同时可以促进项目开发人员之间的技术交流和能力继承。在给客户做多云架构落地的实践中，通过架构交流，帮助客户梳理了整体的架构演进方向，还发现了很多历史问题，对于客户的代码质量提升起到了很大作用。</p>
+
+<p>多云架构也面临特别多的挑战。首先是短期内企业维护成本的增加和技术成本的增加，需要投入专家解决前期的架构适配问题，为系统持续演进搭好框架。多云系统运行，还会增加业务数据同步，不同云上系统如何进行协同的问题。只有当客户多云系统相对独立，没有数据共享和业务交互的场景才比较简单。多云系统还会影响到客户的交付效率，不同云的持续交付方式存在较大的差异，运维人员的体验不同，会降低日常的效率。</p>
+
+<p>因此，多云架构更多的是准备“备胎”，客户的主要业务还是以单一云厂商提供。多云架构给客户对比不同云厂商的服务质量提供了非常准确的参考，客户能够更加准确的选择优质的供应商。</p>
+
+<p>微服务框架层的抽象是做多云架构最难抽象的部分，也是多数开发者最难把握的一层。ServiceComb 微服务开发框架作为参考接口规范，可以非常好的适配到 HSF、Spring Cloud 等框架。</p>
+
+<p>在接口定义的时候，可以采用它作为基线，先测试 ServiceComb，再测试 HSF 和 Spring Cloud 等适配，对于新接口开发、历史系统迁移都是一个非常好的中间产品。</p>
+
+<p><strong>本文转载自公众号微服务蜂巢</strong>。</p>
+
+<p><strong>原文链接</strong>：</p>
+
+<p><strong>https://mp.weixin.qq.com/s?__biz=MzUxNTEwNTg5Mg==&amp;mid=2247488363&amp;idx=1&amp;sn=165d23173237ca05953094e2722d38b6&amp;chksm=f9bae660cecd6f769747d9ef126731049aa14feda55a987aa4c313b0ed03258a1ca9b303056c&amp;scene=27#wechat_redirect</strong></p>
+:ET
