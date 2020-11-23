@@ -1,3 +1,17 @@
+---
+layout:     post
+title:      云计算底层技术
+subtitle:   使用openvswitch
+date:       2020-11-23
+author:     李绍俊
+header-img: img/post-bg-ios9-web.jpg
+catalog: true
+tags:
+    - OpenStack
+    - 云计算
+    - 网络技术
+    - OpenvSwitch
+---
 # 云计算底层技术-使用openvswitch
 
 Posted on January 23, 2017 by opengers in [openstack](https://opengers.github.io/categories/#openstack) 
