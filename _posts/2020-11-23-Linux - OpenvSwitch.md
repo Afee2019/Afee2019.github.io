@@ -14,28 +14,6 @@ tags:
 ---
 # 云计算底层技术-使用openvswitch
 
-Posted on January 23, 2017 by opengers in [openstack](https://opengers.github.io/categories/#openstack) 
-
-- [Open vSwitch介绍](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#open-vswitch介绍)
-- OVS架构
-  - [ovs-vswitchd](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#ovs-vswitchd)
-  - [ovsdb-server](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#ovsdb-server)
-  - [OpenFlow](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#openflow)
-  - [Controller](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#controller)
-  - [Kernel Datapath](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#kernel-datapath)
-- OVS概念
-  - [Bridge](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#bridge)
-  - [Port](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#port)
-  - [Interface](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#interface)
-  - [Controller](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#controller-1)
-  - [datapath](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#datapath)
-- OVS中的各种流(flows)
-  - [OpenFlow flows](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#openflow-flows)
-  - [“hidden” flows](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#hidden-flows)
-  - [datapath flows](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#datapath-flows)
-  - [管理flows的命令行工具](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#管理flows的命令行工具)
-- [ovs-*工具的使用及区别](https://opengers.github.io/openstack/openstack-base-use-openvswitch/#ovs-工具的使用及区别)
-
 # Open vSwitch介绍
 
 在过去，数据中心的服务器是直接连在硬件交换机上，后来VMware实现了服务器虚拟化技术，使虚拟服务器(VMs)能够连接在虚拟交换机上，借助这个虚拟交换机，可以为服务器上运行的VMs或容器提供逻辑的虚拟的以太网接口，这些逻辑接口都连接到虚拟交换机上，有三种比较流行的虚拟交换机: VMware virtual switch, Cisco Nexus 1000V,和Open vSwitch
@@ -479,10 +457,8 @@ ovs-ofctl del-flows br0 "in_port=100"
 
 `ovs-vsctl`是一个综合的配置管理工具，`ovsdb-client`倾向于从数据库中查询某些信息，而`ovsdb-tool`是维护数据库文件工具
 
-文章地址https://opengers.github.io/openstack/openstack-base-use-openvswitch/
-
 参考文章
-
+> https://opengers.github.io/openstack/openstack-base-use-openvswitch/
 > https://www.sdxcentral.com/cloud/open-source/definitions/what-is-open-vswitch/
 > http://openvswitch.org/features/
 > https://www.ibm.com/developerworks/cn/cloud/library/1401_zhaoyi_openswitch/
