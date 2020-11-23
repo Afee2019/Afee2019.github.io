@@ -491,14 +491,6 @@ ovs-ofctl del-flows br0 "in_port=100"
 > http://benpfaff.org/papers/ovs.pdf
 > https://networkheresy.com/category/open-vswitch/
 
-<iframe id="dsq-app5331" name="dsq-app5331" allowtransparency="true" frameborder="0" scrolling="no" tabindex="0" title="Disqus" width="100%" src="https://disqus.com/embed/comments/?base=default&amp;f=opengers&amp;t_i=%E4%BA%91%E8%AE%A1%E7%AE%97%E5%BA%95%E5%B1%82%E6%8A%80%E6%9C%AF-%E4%BD%BF%E7%94%A8openvswitch&amp;t_u=https%3A%2F%2Fopengers.github.io%2Fopenstack%2Fopenstack-base-use-openvswitch%2F&amp;t_d=%E4%BA%91%E8%AE%A1%E7%AE%97%E5%BA%95%E5%B1%82%E6%8A%80%E6%9C%AF-%E4%BD%BF%E7%94%A8openvswitch&amp;t_t=%E4%BA%91%E8%AE%A1%E7%AE%97%E5%BA%95%E5%B1%82%E6%8A%80%E6%9C%AF-%E4%BD%BF%E7%94%A8openvswitch&amp;s_o=default#version=c1dc9ddb49e64dc2609149b7c4969de6" horizontalscrolling="no" verticalscrolling="no" style="width: 1px !important; min-width: 100%; border: none !important; overflow: hidden !important; height: 1164px !important;"></iframe>
-
-
-
-
-
-
-
 ---
 
 
@@ -522,9 +514,9 @@ ovs-ofctl del-flows br0 "in_port=100"
 ![ovs](https://upic-lisj.oss-cn-beijing.aliyuncs.com/uPic/1606036491-VZRnmlJ.jpg)
 
 - ovs-vswitchd：OVS守护进程是，OVS的核心部件，实现交换功能，和Linux内核兼容模块一起，实现基于流的交换（flow-based switching）。它和上层 controller 通信遵从 OPENFLOW 协议，它与 ovsdb-server 通信使用 OVSDB 协议，它和内核模块通过netlink通信，它支持多个独立的 datapath（网桥），它通过更改flow table 实现了绑定和VLAN等功能。
-  　　
+  
 - ovsdb-server：轻量级的数据库服务，主要保存了整个OVS 的配置信息，包括接口啊，交换内容，VLAN啊等等。ovs-vswitchd 会根据数据库中的配置信息工作。它于 manager 和 ovs-vswitchd 交换信息使用了OVSDB(JSON-RPC)的方式。
-  　　
+  
 - ovs-dpctl：一个工具，用来配置交换机内核模块，可以控制转发规则。 　
 - ovs-vsctl：主要是获取或者更改ovs-vswitchd 的配置信息，此工具操作的时候会更新ovsdb-server 中的数据库。 　
 - ovs-appctl：主要是向OVS 守护进程发送命令的，一般用不上。
@@ -660,11 +652,7 @@ ovs-vsctl set port br-ex tag=101
 
 ![img](https://upic-lisj.oss-cn-beijing.aliyuncs.com/uPic/1606036525-1172316-20170928140225637-722063079.png)
 
- 
 
-![img](Linux%20-%20OpenvSwitch.assets/ExpandedBlockStart.gif)
-
-[![复制代码](Linux%20-%20OpenvSwitch.assets/copycode-20201122152754104.gif)](javascript:void(0);)
 
 ```
     1. 添加两个虚拟端口，互为peer  
@@ -693,16 +681,6 @@ ovs-vsctl set port br-ex tag=101
     ovs-vsctl add-br br-eth2  
     ovs-vsctl add-port br-mgmt mgmt-eth2 -- set Interface mgmt-eth2 type=patch options:peer=eth2-mgmt  
 
-
-
-
-
-
-
-
-
-
-
 ##############
 
 ovs-vsctl add-port br-eth2 eth2-mgmt -- set Interface eth2-mgmt type=patch options:peer=mgmt-eth2  
@@ -727,8 +705,6 @@ ovs-vsctl clear port br-eth1--br-mgmt tag
 ovs设置网桥MAC  
 ovs-vsctl set bridge br-storage other-config:hwaddr=fa:16:3e:fe:8f:79  
 ```
-
-[![复制代码](Linux%20-%20OpenvSwitch.assets/copycode-20201122152754104.gif)](javascript:void(0);)
 
  
 
