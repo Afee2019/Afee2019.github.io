@@ -529,8 +529,6 @@ root[@localhost](https://my.oschina.net/u/570656):~# ovs-vsctl add-port br0 eth1
 
 #### 4.Openvswitch常见操作
 
-[![复制代码](Linux%20-%20OpenvSwitch.assets/copycode-20201122152754104.gif)](javascript:void(0);)
-
 ```
 # 添加网桥：
 ovs-vsctl add-br br0  
@@ -594,9 +592,6 @@ ovs-ofctl -V
 ovs-vsctl set port br-ex tag=101
 ```
 
-[![复制代码](Linux%20-%20OpenvSwitch.assets/copycode-20201122152754104.gif)](javascript:void(0);)
-
- 
 
 ### 二.Neutron使用openvswitch网络通信的基本原理
 
