@@ -38,5 +38,4 @@ _site
 .idea
 
 # jekyll cache file
-.jekyll-cache
-
+/.jekyll-cache/
